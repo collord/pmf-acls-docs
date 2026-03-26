@@ -1,13 +1,23 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#     "pmf-acls",
 # ]
 # ///
 import marimo
 
 __generated_with = "0.13.0"
 app = marimo.App(width="medium")
+
+
+@app.cell
+async def _():
+    import sys
+    if "pyodide" in sys.modules or "pyodide_js" in sys.modules:
+        import pyodide_js
+        await pyodide_js.loadPackage(["numpy", "scipy", "matplotlib"])
+        import micropip
+        await micropip.install("pmf-acls", deps=False)
+    return
 
 
 @app.cell
