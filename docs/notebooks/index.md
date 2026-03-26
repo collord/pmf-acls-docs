@@ -8,6 +8,7 @@ Interactive notebooks demonstrating `pmf-acls` workflows.
 basic_pmf
 bayesian_demo
 cross_algorithm_comparison
+marimo_examples
 ```
 
 :::{note}

@@ -16,4 +16,5 @@ dependencies = [
     "matplotlib",
     "pandas",
     "ipykernel",
+    "sphinx-marimo>=0.3.0",
 ]

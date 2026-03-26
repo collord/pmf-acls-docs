@@ -15,7 +15,15 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_design",
     "sphinxcontrib.bibtex",
+    "sphinx_marimo",
 ]
+
+# sphinx-marimo settings
+marimo_notebook_dir = "notebooks/marimo"
+marimo_default_height = "800px"
+marimo_default_width = "100%"
+marimo_click_to_load = "overlay"
+marimo_load_button_text = "Launch Interactive Notebook"
 
 # MyST settings
 myst_enable_extensions = [
