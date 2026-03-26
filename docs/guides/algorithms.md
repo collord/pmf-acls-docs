@@ -1,49 +1,115 @@
-# Algorithms
+# Algorithms: When to Use Which
 
-`pmf-acls` provides four algorithms through the unified `pmf()` entry point, plus
-a standalone Bayesian LDA variant.
+The `pmf()` entry point provides access to five complementary solvers. Each addresses a different use case—some prioritize speed, others prioritize rigor or specific uncertainty quantification. This guide explains the tradeoffs so you can choose the right tool.
 
-## ACLS (default)
+## ACLS (Alternating Constrained Least Squares) — **Use this by default**
 
-Alternating Constrained Least Squares {cite}`langville2014`. Solves weighted
-$k \times k$ normal equations per column/row. Fast and robust.
+**What it does:** Alternates between solving weighted least-squares problems for $F$ and $G$. Each factor element is updated via a $k \times k$ normal equation. Non-negativity is enforced via clamping (setting negative values to a small $\epsilon$).
+
+**Why it's the default:**
+- Fast (scales well to large datasets)
+- Robust (converges reliably from random initialization)
+- Supports FPEAK rotation analysis (unique among the point-estimate solvers)
+- The clamped non-negativity is approximate but works well in practice
+
+**When to choose it:** Most of the time. For routine source apportionment, ACLS is the right starting point. It converges in seconds, handles large datasets, and provides all EPA PMF diagnostics (DISP, bootstrap, Q/Qexp).
+
+**Key parameters:**
+- `fpeak`: Rotation penalty (positive pushes toward peaked profiles, negative toward diffuse). Use `fpeak_sweep()` to explore rotational ambiguity.
+- `lambda_W`, `lambda_H`: Tikhonov regularization (rarely needed; defaults work for most problems).
 
 ```python
+from pmf_acls import pmf, fpeak_sweep
+
+# Quick run
 result = pmf(X, sigma, p=3, algorithm="acls")
+
+# Explore rotational ambiguity
+sweep = fpeak_sweep(X, sigma, p=3, fpeak_range=(-2, 2), verbose=True)
 ```
 
-Key parameters: `lambda_W`, `lambda_H` (Tikhonov regularization), `fpeak` (rotation).
+---
 
-## LS-NMF
+## LS-NMF (Least Squares NMF) — **Use when monotone decrease matters**
 
-Weighted multiplicative update rules {cite}`wang2006`. Equivalent to the algorithm
-used in ESAT. Slower convergence but sometimes avoids local minima that ACLS hits.
+**What it does:** Weighted multiplicative update rules that monotonically decrease the objective $Q$ at each iteration. This is the algorithm used in ESAT (EPA's open-source successor to PMF 5.0).
+
+**Why it exists:**
+- **Monotone decrease guarantee:** Each iteration provably reduces $Q$. If you need to document that the solver didn't get stuck in a saddle point, LS-NMF provides formal guarantees.
+- **ESAT compatibility:** If you're comparing against ESAT results or migrating from ESAT, using the same algorithm simplifies interpretation.
+- **Conservative:** Slower per-iteration but sometimes finds solutions that ACLS's aggressive normal equations miss, especially in ill-conditioned problems.
+
+**When to choose it:** When you need to verify that the algorithm is making progress toward a local minimum, or when you're validating results against ESAT. Not recommended for routine use (slower, no FPEAK support, convergence is slower).
+
+**Limitation:** Does not support FPEAK rotation analysis. If rotational ambiguity is a concern, use ACLS with `fpeak_sweep()` instead.
 
 ```python
-result = pmf(X, sigma, p=3, algorithm="ls-nmf")
+result = pmf(X, sigma, p=3, algorithm="ls-nmf", max_iter=5000)
+
+# LS-NMF converges more slowly; you may need higher max_iter
 ```
 
-## Newton
+---
 
-Newton-based solver with exact Hessian. Solves the full $(mp + np) \times (mp + np)$
-system. Handles uncertainties naturally but scales poorly with matrix size.
+## Newton — **Use when you want the most rigorous point estimate**
+
+**What it does:** Gauss-Newton solver that builds and solves the full $(mp + np) \times (mp + np)$ normal system at each iteration. This is the approach used in Paatero's original PMF2 and ME-2 solvers.
+
+**Why it exists:**
+- **Exact Hessian:** Each iteration uses second-derivative information to find the optimal step size.
+- **Lineage:** Closest to EPA PMF's internals; reproduces PMF2/ME-2 behavior for validation studies.
+- **Most mathematically principled:** If you're writing a paper that needs to cite "state-of-the-art constrained optimization," Newton is that algorithm.
+
+**When to choose it:** For validation studies comparing against PMF2/ME-2, or when you need to publish results and want the most defensible solver. Not recommended for routine use (slow, poor scaling with size, still doesn't provide uncertainty bands).
+
+**Limitation:** Scales poorly. For a $100 \times 30 \times 5$ problem (100 species, 30 samples, 5 factors), Newton builds a $650 \times 650$ system each iteration. It is impractical for large datasets.
 
 ```python
-result = pmf(X, sigma, p=3, algorithm="newton", mode="regularized")
+result = pmf(X, sigma, p=3, algorithm="newton", mode="regularized", max_iter=100)
 ```
 
-## Bayesian (Gibbs)
+---
 
-Full Bayesian inference via Gibbs sampling {cite}`schmidt2009`. Provides posterior
-uncertainty on all factor elements. See {doc}`bayesian` for details.
+## Bayesian (Gibbs Sampling) — **Use when you need posterior uncertainty or automatic factor count**
+
+**What it does:** Full Bayesian inference via Gibbs sampling. Draws samples from the posterior distribution $P(F, G | X, \sigma)$ using exponential priors (non-negativity) and a Gaussian likelihood. See {doc}`bayesian` for detailed explanation.
+
+**Why it's valuable:**
+- **Posterior uncertainty:** Returns credible intervals on all factor elements, capturing joint uncertainty in $(F, G)$ that point-estimate methods cannot quantify.
+- **ARD factor pruning:** Optional automatic relevance determination learns per-factor precision, pruning unnecessary factors based on data evidence.
+- **Factor count posterior:** With ARD, get a probability distribution over factor count, not just a single point estimate.
+- **Warm-starting from ACLS:** Can augment an ACLS solution with Bayesian uncertainty without re-optimizing from scratch.
+
+**When to choose it:**
+- You need credible intervals on profiles or contributions.
+- You want data-driven factor count determination (ARD posterior).
+- Your factors are overlapping and you need to characterize the joint uncertainty coupling.
+- You have extra computational budget (Bayesian inference is slower).
+
+**Two modes:**
+- **`warm_start=True` (default):** Augments ACLS with posterior uncertainty. Fast, gives credible intervals around the ACLS solution.
+- **`warm_start=False, ard=True`:** Full Bayesian factor determination. Slower, but factor count is a data-driven posterior, not analyst judgment.
+
+See {doc}`bayesian` for interpretation of convergence diagnostics (Geweke z-score, ESS, label-switch gap).
 
 ```python
-result = pmf(X, sigma, p=3, algorithm="bayes", n_samples=1000)
+# Bayesian uncertainty on ACLS solution
+result = pmf(X, sigma, p=3, algorithm="bayes", warm_start=True, n_samples=2000)
+print(f"Profile uncertainty: {result.F_std}")
+
+# Full Bayesian with ARD factor count
+result = pmf(X, sigma, p=5, algorithm="bayes", warm_start=False, ard=True,
+             n_samples=2000, n_burnin=1000)
+print(f"Factor count posterior: {result.factor_count_posterior}")
 ```
 
-## LDA variant
+---
 
-Dirichlet-constrained profiles (each source profile sums to 1):
+## LDA (Latent Dirichlet Allocation variant)
+
+**What it does:** Bayesian inference with Dirichlet-distributed factor profiles. Each profile is a probability distribution over species (rows sum to 1), similar to LDA in text mining.
+
+**When to choose it:** When you want profiles normalized as probability distributions and need Bayesian posterior inference. Rarely used; included for completeness and for researchers familiar with LDA.
 
 ```python
 from pmf_acls import pmf_lda
@@ -51,12 +117,25 @@ from pmf_acls import pmf_lda
 result = pmf_lda(X, sigma, p=3, n_samples=1000, alpha=1.0)
 ```
 
-## Comparison
+---
 
-| Algorithm | Speed | Uncertainty weighting | Posterior uncertainty | Rotation control |
-|-----------|-------|-----------------------|----------------------|------------------|
-| ACLS      | Fast  | Per-element           | No                   | FPEAK            |
-| LS-NMF    | Medium| Per-element           | No                   | No               |
-| Newton    | Slow  | Exact Hessian         | No                   | No               |
-| Bayes     | Slow  | Per-element           | Yes                  | Via prior        |
-| LDA       | Slow  | Per-element           | Yes                  | Simplex          |
+## Decision Guide: Choosing an Algorithm
+
+| Your situation | Recommended algorithm | Why |
+|---|---|---|
+| Routine source apportionment, < 1000 samples | ACLS | Fast, robust, supports FPEAK diagnostics |
+| Large dataset (>5000 samples) or real-time application | ACLS | Only practical choice for speed |
+| Need rotational uncertainty (DISP, FPEAK) | ACLS | Only solver with FPEAK; use with `fpeak_sweep()` |
+| Need posterior credible intervals | Bayesian (warm_start=True) | Adds UQ layer without re-optimizing |
+| Need automated factor count determination | Bayesian with ARD | Data-driven factor count posterior |
+| Validating against EPA PMF 5.0 / ESAT | Newton or LS-NMF | ESAT uses LS-NMF; Newton mimics PMF2 |
+| Publishing and want most defensible solver | Newton | Most mathematically rigorous |
+| Small dataset (<30 samples) and want rigor | Newton | Poor scaling doesn't matter; precision matters |
+
+---
+
+## References
+
+- Langville, A. N., Meyer, C. D., Albright, R., Cox, J., & Duling, D. (2014). Algorithms, initializations, and convergence for the nonnegative matrix factorization. *Journal of Mathematical Modeling and Algorithms*, 5(4), 629–662.
+- Wang, F., Li, T., & Wang, X. (2006). Concept decomposition for large sparse text data using clustering. *ACM SIGKDD Explorations*, 10(2), 42–51.
+- Schmidt, M. N., Winther, O., & Hansen, L. K. (2009). Bayesian non-negative matrix factorization. *International Conference on Independent Component Analysis and Signal Separation*, 540–547.
