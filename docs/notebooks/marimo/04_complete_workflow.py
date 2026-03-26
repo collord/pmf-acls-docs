@@ -2,10 +2,6 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "pmf-acls",
-#     "numpy",
-#     "scipy",
-#     "matplotlib",
-#     "pandas",
 # ]
 # ///
 import marimo
