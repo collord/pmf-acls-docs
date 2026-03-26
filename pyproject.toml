@@ -1,0 +1,19 @@
+[project]
+name = "pmf-acls-docs"
+version = "0.1.0"
+description = "Documentation site for the pmf-acls package"
+requires-python = ">=3.11"
+dependencies = [
+    "sphinx>=8.0",
+    "pydata-sphinx-theme>=0.16",
+    "myst-nb>=1.2",
+    "sphinx-copybutton>=0.5",
+    "sphinx-design>=0.6",
+    "sphinxcontrib-bibtex>=2.6",
+    "pmf-acls>=0.1.1",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pandas",
+    "ipykernel",
+]
