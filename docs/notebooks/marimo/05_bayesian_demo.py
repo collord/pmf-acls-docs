@@ -221,7 +221,7 @@ def _(make_synthetic, mo, noise_slider, n_vars_slider, n_obs_slider, np, seed_nu
 def _(mo):
     mo.md(
         """
-        ## 2. Bayesian NMF — Posterior Mean with Credible Intervals
+        ## 2. Bayesian PMF — Posterior Mean with Credible Intervals
 
         The Bayesian solver runs a multi-seed ACLS point estimate (stored in
         `result.F`) and then refines via Gibbs sampling.  The plots below use
@@ -243,10 +243,10 @@ def _(mo):
     nb_slider = mo.ui.slider(
         200, 4000, step=200, value=2000, label="Burn-in sweeps"
     )
-    run_btn = mo.ui.run_button(label="Run Bayesian NMF")
-    bayes_controls = mo.hstack(
-        [p_slider, ns_slider, nb_slider, run_btn], justify="start", gap=1.5
-    )
+    run_btn = mo.ui.run_button(label="Run Bayesian PMF")
+    bayes_controls = mo.vstack( [mo.hstack(\
+        [p_slider, ns_slider, nb_slider, run_btn], justify="start", gap=1.5\
+    ), run_btn], justify="center" , gap=1.5)
     bayes_controls
     return p_slider, ns_slider, nb_slider, run_btn
 
