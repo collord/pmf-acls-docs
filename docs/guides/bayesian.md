@@ -172,7 +172,7 @@ Bayesian inference and EPA PMF diagnostics address **non-overlapping** uncertain
 |---|---|---|
 | **DISP (rotational ambiguity)** | One-at-a-time factor element sensitivity | Joint factor coupling |
 | **Bootstrap (sampling stability)** | Resampling uncertainty | Model-specific uncertainty |
-| **Bayesian posterior (joint uncertainty)** | Joint $(F, G)$ distribution under the model | Rotational ambiguity (rotation manifold has measure zero) |
+| **Bayesian posterior (joint uncertainty)** | Joint $(F, G)$ distribution under the model | Systematic enumeration of rotations (though label switching and multimodality partially explore rotational freedom) |
 | **Q/Qexp (noise model validation)** | Are uncertainties calibrated to residuals? | Factor count (conflates structure and noise) |
 
 **You need both:** Bayesian posterior for credible intervals, EPA PMF tools (DISP, Q/Qexp) for rotational stability and model adequacy.
@@ -201,5 +201,5 @@ print(f"Joint posterior uncertainty: {bayes_result.F_std}")
 ## References
 
 - Schmidt, M. N., Winther, O., & Hansen, L. K. (2009). Bayesian non-negative matrix factorization. *International Conference on Independent Component Analysis and Signal Separation*, 540–547.
-- Brouwer, T., Frellsen, J., & Liò, P. (2017). Variational auto-encoded deep Gaussian processes. In *International Conference on Learning Representations*.
+- Brouwer, T., Frellsen, J., & Liò, P. (2017). Comparative study of inference methods for Bayesian nonnegative matrix factorisation. In *Machine Learning and Knowledge Discovery in Databases* (ECML PKDD 2017). Lecture Notes in Computer Science, vol. 10534. Springer.
 - Gelman, A., et al. (2013). *Bayesian Data Analysis* (3rd ed.). Chapman and Hall/CRC.

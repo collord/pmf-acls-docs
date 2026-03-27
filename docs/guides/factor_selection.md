@@ -38,6 +38,8 @@ Paatero (1993) himself acknowledged these violations, calling Q "asymptotically"
 
 ## The Diagnostic Discrepancy Principle
 
+This section introduces the **Diagnostic Discrepancy Principle**—a framework developed for this package that synthesizes two complementary diagnostic methods. While the individual components (scree/elbow testing and Q/Qexp analysis) are established practices in the literature, their specific combination under this name and the interpretive framework below are novel to this package. The approach is methodologically sound but should be understood as a package-proposed heuristic rather than a validated statistical criterion from the peer-reviewed literature.
+
 Factor selection requires **two independent metrics** that ask different questions:
 
 ### 1. Structural Question: How many dimensions of variation exist?
@@ -148,6 +150,6 @@ WAIC estimates out-of-sample predictive accuracy. Lower WAIC indicates better ge
 
 ## References
 
-- Paatero, P. (1993). Least squares formulation of robust non-negative factor analysis. *Chemometrics and Intelligent Laboratory Systems*, 37(1), 23–35.
+- Paatero, P. (1997). Least squares formulation of robust non-negative factor analysis. *Chemometrics and Intelligent Laboratory Systems*, 37(1), 23–35.
 - Paatero, P., Eberly, S., Brown, S. G., & Norris, G. A. (2014). Methods for estimating uncertainty in factor analytic solutions. *Atmospheric Measurement Techniques*, 7(3), 781–797.
 - Gelman, A., et al. (2013). *Bayesian Data Analysis* (3rd ed.). Chapman and Hall/CRC.

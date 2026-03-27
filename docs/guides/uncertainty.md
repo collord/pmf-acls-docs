@@ -20,6 +20,8 @@ print(f"Contribution CIs: {bs.G_ci_low} to {bs.G_ci_high}")
 
 **When to use:** For all analyses. Bootstrap is model-light—it doesn't assume a specific error distribution, just resamples the observed data. It tests whether the data itself supports the solution.
 
+**Block size selection:** Block size is a critical parameter when your data has temporal or spatial correlation (common in time series or spatial sampling). The block size should approximate the correlation length of your data so that the bootstrap captures autocorrelation structure. EPA PMF 5.0 uses a specific block bootstrap protocol; consult the EPA user guide for block size recommendations for your application. If uncertain, test sensitivity: compare results with block size = 1 (random bootstrap) vs. block size = correlation length. If factors change qualitatively, the block size matters.
+
 ---
 
 ## Displacement (DISP): How far can profiles move before Q degrades?

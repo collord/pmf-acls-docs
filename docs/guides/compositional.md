@@ -73,8 +73,8 @@ $$\text{CLR}_i(x) = \log\left(\frac{x_i}{\text{GM}(x)}\right)$$
 where $\text{GM}(x) = \sqrt[D]{\prod_i x_i}$ is the geometric mean.
 
 **Key properties:**
-1. **Bijection:** The CLR is a one-to-one map from the simplex to $\mathbb{R}^{D-1}$. No information is lost.
-2. **Separates magnitude from composition:** Scaling all parts by a constant c does not change the CLR (geometric mean cancels out). The CLR sees only the relative structure.
+1. **Geometric embedding:** The CLR maps the simplex to a $(D-1)$-dimensional hyperplane in $\mathbb{R}^D$ (since CLR components sum to zero). The map is isometric with respect to the Aitchison inner product but is not injective as a map into $\mathbb{R}^D$ (covariance matrices will be singular). For full-rank representations, see the ILR (Isometric Log-Ratio) transform, which is a bijection to $\mathbb{R}^{D-1}$ (Egozcue et al., 2003).
+2. **Separates magnitude from composition:** Scaling all parts by a constant $c$ does not change the CLR (geometric mean cancels out). The CLR sees only the relative structure.
 3. **Aitchison-isometric:** Distances in CLR space respect the Aitchison inner product on the simplex.
 4. **Recoverable:** Inverse CLR maps back to the simplex (compositions summing to a constant).
 
@@ -82,10 +82,10 @@ where $\text{GM}(x) = \sqrt[D]{\prod_i x_i}$ is the geometric mean.
 
 `aitchison_nmf()` implements the full approach:
 
-1. **Transform to CLR space:** $\text{CLR}(X)$ maps compositions to $\mathbb{R}^{D-1}$.
+1. **Transform to CLR space:** $\text{CLR}(X)$ maps compositions to the $(D-1)$-dimensional hyperplane in $\mathbb{R}^D$.
 2. **Weight via delta method:** Original per-element uncertainties σ propagate to CLR space via:
 $$w_{ij} = \frac{X^2_{ij}}{\sigma^2_{ij}}$$
-These weights preserve heteroscedastic information without distortion.
+These weights preserve heteroscedastic information. Note: This is a diagonal approximation of the delta-method Jacobian and assumes independent measurement errors across species. For data with correlated measurement errors (common in XRF or ICP-MS due to matrix effects), the full covariance propagation would include off-diagonal terms. In practice, the diagonal approximation is widely used and usually adequate.
 3. **Factorize in CLR space:** Minimize weighted distance, discovering profiles in the correct geometry.
 4. **Inverse transform:** $\text{CLR}^{-1}(F, G)$ recovers profiles as simplex-valid compositions and contributions.
 

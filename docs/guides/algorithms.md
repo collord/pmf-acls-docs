@@ -6,6 +6,8 @@ The `pmf()` entry point provides access to five complementary solvers. Each addr
 
 **What it does:** Alternates between solving weighted least-squares problems for $F$ and $G$. Each factor element is updated via a $k \times k$ normal equation. Non-negativity is enforced via clamping (setting negative values to a small $\epsilon$).
 
+*Note: ACLS is terminology internal to this package. The broader NMF literature refers to this approach as ANLS (Alternating Non-negative Least Squares) or ALS with non-negativity constraints. Searching for "ACLS" in the research literature will yield few results outside this package.*
+
 **Why it's the default:**
 - Fast (scales well to large datasets)
 - Robust (converges reliably from random initialization)
@@ -35,7 +37,7 @@ sweep = fpeak_sweep(X, sigma, p=3, fpeak_range=(-2, 2), verbose=True)
 **What it does:** Weighted multiplicative update rules that monotonically decrease the objective $Q$ at each iteration. This is the algorithm used in ESAT (EPA's open-source successor to PMF 5.0).
 
 **Why it exists:**
-- **Monotone decrease guarantee:** Each iteration provably reduces $Q$. If you need to document that the solver didn't get stuck in a saddle point, LS-NMF provides formal guarantees.
+- **Monotone decrease guarantee:** Each iteration provably reduces (or leaves unchanged) the objective $Q$. This ensures descent-based progress and prevents oscillation, but does not guarantee escape from saddle points—only convergence to a stationary point. The NMF landscape is non-convex with many local minima and saddle points, so monotone decrease is about descent direction, not solution quality.
 - **ESAT compatibility:** If you're comparing against ESAT results or migrating from ESAT, using the same algorithm simplifies interpretation.
 - **Conservative:** Slower per-iteration but sometimes finds solutions that ACLS's aggressive normal equations miss, especially in ill-conditioned problems.
 
@@ -53,7 +55,7 @@ result = pmf(X, sigma, p=3, algorithm="ls-nmf", max_iter=5000)
 
 ## Newton — **Use when you want the most rigorous point estimate**
 
-**What it does:** Gauss-Newton solver that builds and solves the full $(mp + np) \times (mp + np)$ normal system at each iteration. This is the approach used in Paatero's original PMF2 and ME-2 solvers.
+**What it does:** Gauss-Newton solver that solves the joint normal equations for $(F, G)$ using second-derivative information. This is the approach used in Paatero's original PMF2 and ME-2 solvers (though their exact implementation details remain partially undocumented).
 
 **Why it exists:**
 - **Exact Hessian:** Each iteration uses second-derivative information to find the optimal step size.
@@ -136,6 +138,6 @@ result = pmf_lda(X, sigma, p=3, n_samples=1000, alpha=1.0)
 
 ## References
 
-- Langville, A. N., Meyer, C. D., Albright, R., Cox, J., & Duling, D. (2014). Algorithms, initializations, and convergence for the nonnegative matrix factorization. *Journal of Mathematical Modeling and Algorithms*, 5(4), 629–662.
-- Wang, F., Li, T., & Wang, X. (2006). Concept decomposition for large sparse text data using clustering. *ACM SIGKDD Explorations*, 10(2), 42–51.
+- Langville, A. N., Meyer, C. D., Albright, R., Cox, J., & Duling, D. (2014). Algorithms, initializations, and convergence for the nonnegative matrix factorization. *arXiv preprint arXiv:1407.7299*.
+- Wang, G., Kossenkov, A.V., Bhatt, N.N., & Ochs, M.F. (2006). LS-NMF: A modified non-negative matrix factorization algorithm utilizing uncertainty estimates. *BMC Bioinformatics*, 7, 175.
 - Schmidt, M. N., Winther, O., & Hansen, L. K. (2009). Bayesian non-negative matrix factorization. *International Conference on Independent Component Analysis and Signal Separation*, 540–547.

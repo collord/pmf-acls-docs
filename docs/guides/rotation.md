@@ -135,7 +135,7 @@ for k in range(3):
     print(f"Factor {k}: Peaked={peaked_sum:.2f}, Diffuse={diffuse_sum:.2f}")
 ```
 
-**Equivalence:** Bayesian λ_G and ACLS FPEAK encode the same rotation preference, just in different languages. Smaller λ_G is like positive FPEAK; larger λ_G is like negative FPEAK.
+**Qualitative similarity, different mechanisms:** Bayesian λ_G and ACLS FPEAK both influence the peaked/diffuse trade-off, but through fundamentally different mechanisms. FPEAK is a deterministic rotation control that modifies the objective surface during optimization. λ_G is a sparsity prior that operates through the posterior sampler. While smaller λ_G qualitatively favors peaked profiles (similar to positive FPEAK) and larger λ_G favors diffuse profiles, they are not interchangeable: tuning λ_G will *not* replicate an FPEAK sweep, and the sampled posteriors will explore the rotation manifold differently than a deterministic rotation penalty would.
 
 ## Practical Workflow
 
