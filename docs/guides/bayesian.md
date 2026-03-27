@@ -153,9 +153,9 @@ result_fixed = pmf(X, sigma, p=3, algorithm='acls')
 q_ratio = result_fixed.Q / (X.size - 3 * (X.shape[0] + X.shape[1] - 3))
 print(f"Q/Qexp (fixed sigma): {q_ratio:.2f}")  # Should be ≈ 1 for adequate model
 
-# Bayesian with sigma learning: posterior UQ
-result_bayes = pmf(X, sigma, p=3, algorithm='bayes', learn_sigma=True)
-print(f"Posterior σ: {result_bayes.sigma_posterior_mean}")  # May differ from input sigma
+# Bayesian with hierarchical sigma: posterior UQ with learned uncertainty
+result_bayes = pmf(X, sigma, p=3, algorithm='bayes', sigma_prior="per_variable")
+print(f"Posterior σ: {result_bayes.sigma_posterior_mean}")  # Per-variable uncertainties learned from data
 ```
 
 ### 3. Bayesian Propagates Uncertainty Within a Model Family, Not About It

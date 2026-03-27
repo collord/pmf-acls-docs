@@ -27,12 +27,12 @@ from pmf_acls import pmf, fpeak_sweep
 result = pmf(X, sigma, p=3, algorithm="acls")
 
 # Explore rotational ambiguity
-sweep = fpeak_sweep(X, sigma, p=3, fpeak_range=(-2, 2), verbose=True)
+sweep = fpeak_sweep(X, sigma, p=3, fpeak_values=np.linspace(-2, 2, 9), verbose=True)
 ```
 
 ---
 
-## LS-NMF (Least Squares NMF) — **Use when monotone decrease matters**
+## LS-PMF (Least Squares PMF) — **Use when monotone decrease matters**
 
 **What it does:** Weighted multiplicative update rules that monotonically decrease the objective $Q$ at each iteration. This is the algorithm used in ESAT (EPA's open-source successor to PMF 5.0).
 
@@ -46,9 +46,9 @@ sweep = fpeak_sweep(X, sigma, p=3, fpeak_range=(-2, 2), verbose=True)
 **Limitation:** Does not support FPEAK rotation analysis. If rotational ambiguity is a concern, use ACLS with `fpeak_sweep()` instead.
 
 ```python
-result = pmf(X, sigma, p=3, algorithm="ls-nmf", max_iter=5000)
+result = pmf(X, sigma, p=3, algorithm="ls-pmf", max_iter=5000)
 
-# LS-NMF converges more slowly; you may need higher max_iter
+# LS-PMF converges more slowly; you may need higher max_iter
 ```
 
 ---
@@ -130,7 +130,7 @@ result = pmf_lda(X, sigma, p=3, n_samples=1000, alpha=1.0)
 | Need rotational uncertainty (DISP, FPEAK) | ACLS | Only solver with FPEAK; use with `fpeak_sweep()` |
 | Need posterior credible intervals | Bayesian (warm_start=True) | Adds UQ layer without re-optimizing |
 | Need automated factor count determination | Bayesian with ARD | Data-driven factor count posterior |
-| Validating against EPA PMF 5.0 / ESAT | Newton or LS-NMF | ESAT uses LS-NMF; Newton mimics PMF2 |
+| Validating against EPA PMF 5.0 / ESAT | Newton or LS-PMF | ESAT uses LS-PMF; Newton mimics PMF2 |
 | Publishing and want most defensible solver | Newton | Most mathematically rigorous |
 | Small dataset (<30 samples) and want rigor | Newton | Poor scaling doesn't matter; precision matters |
 

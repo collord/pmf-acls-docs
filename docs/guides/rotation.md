@@ -31,11 +31,11 @@ Run a sweep to explore rotational freedom:
 ```python
 from pmf_acls import fpeak_sweep
 import matplotlib.pyplot as plt
+import numpy as np
 
 sweep = fpeak_sweep(
     X, sigma, p=3,
-    fpeak_range=(-2, 2),
-    n_fpeak=9,
+    fpeak_values=np.linspace(-2, 2, 9),
     verbose=True,
 )
 
@@ -74,7 +74,8 @@ print(f"Q range: {q_range:.0f} (ΔQ = {q_range / sweep.Q_values[len(sweep.Q_valu
 
 ```python
 # Get factors at different FPEAK values
-sweep = fpeak_sweep(X, sigma, p=3, fpeak_range=(-1, 1), n_fpeak=5)
+import numpy as np
+sweep = fpeak_sweep(X, sigma, p=3, fpeak_values=np.linspace(-1, 1, 5))
 
 import matplotlib.pyplot as plt
 fig, axes = plt.subplots(1, 3, figsize=(12, 4))
