@@ -12,7 +12,9 @@ Under the assumption that the model is correct and the uncertainty estimates $\s
 
 $$\nu = (n_{\text{obs}} \times n_{\text{species}}) - p(n_{\text{obs}} + n_{\text{species}} - p)$$
 
-(This is Paatero's formula; the EPA simplification nm - p(n + m) is slightly different and less accurate when constraints are active.) Under this model, $E[Q] = \nu$, so $Q / Q_{\text{exp}} \approx 1$ indicates that the observed residuals match the expected noise level.
+(This is Paatero's formula; the EPA simplification nm - p(n + m) is slightly different.) Under this model, $E[Q] = \nu$, so $Q / Q_{\text{exp}} \approx 1$ indicates that the observed residuals match the expected noise level.
+
+**Important caveat:** Both DOF formulas are theoretical approximations derived for unconstrained optimization. When many elements of F or G are at their non-negativity bounds (exactly zero due to active constraints), the effective degrees of freedom can differ substantially from either formula. This effect is data-dependent and can be significant for sparse factor matrices (common in environmental source apportionment). See Brown et al. (2015) for discussion of active-constraint effects on Q/Qexp interpretation.
 
 ### Why the Theory Breaks Down for Factor Determination
 

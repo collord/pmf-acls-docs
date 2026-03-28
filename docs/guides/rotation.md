@@ -14,15 +14,23 @@ Paatero's PMF includes the **FPEAK** rotation parameter to manage this ambiguity
 
 ## How FPEAK Works Mechanically
 
-FPEAK adds a rotation penalty to the objective:
+**Pedagogical Analogy (Not the Actual Mechanism):**
+
+The formula often presented for FPEAK is:
 
 $$Q_{\text{FPEAK}} = Q + \text{FPEAK} \cdot \sum_k \left(\sum_i F_{ik}\right)^2$$
 
-**Positive FPEAK:** Penalizes the sum of each profile column. The solver is encouraged to make profiles *peaked*: each source dominates a small set of species.
+This describes an L2 penalty on profile column sums, which *qualitatively* pushes toward peaked or diffuse profiles. However, **this formula does not describe FPEAK's actual implementation**. Paatero's FPEAK mechanism, as described in Hopke (2000), operates via "controlled additions of one G vector to another and subtractions of corresponding F factors"—a rotational operation within the Gauss-Newton iteration, not an additive penalty term. To quote *Geoscientific Model Development* (2025): "To date, Paatero's exact algorithmic approach to solving [the FPEAK objective] remains unpublished."
 
-**Negative FPEAK:** Penalizes the *difference* in column sums. The solver is encouraged to make profiles *diffuse*: each source contributes to all species.
+The formula captures FPEAK's *qualitative direction* (peaked vs. diffuse trade-off) but is a simplification, not a description of the actual rotation mechanism.
 
-By sweeping FPEAK across a range (e.g., -2 to +2), you explore how the solution rotates and how robust the rotation choice is.
+**Interpretation:**
+
+**Positive FPEAK:** Qualitatively encourages profiles toward being *peaked*: each source dominates a small set of species.
+
+**Negative FPEAK:** Qualitatively encourages profiles toward being *diffuse*: each source contributes to all species.
+
+By sweeping FPEAK across a range (e.g., -2 to +2), you explore how robust the rotation choice is—but the mechanism driving this rotation is a geometric operation on the factor space, not the penalty formula shown above.
 
 ## FPEAK Sweep and Interpretation
 

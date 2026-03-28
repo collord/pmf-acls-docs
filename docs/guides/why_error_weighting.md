@@ -12,6 +12,8 @@ Precise measurements (small $\sigma_{ij}$) exert more influence. Noisy measureme
 
 ## The Knowledge-Level Spectrum
 
+**Package-Developed Framework:** The five-level knowledge spectrum below is a novel framework developed for this package. While the individual levels reflect genuine practical considerations from the receptor modeling literature, this specific taxonomy is not from established published standards. It synthesizes real-world considerations but should be understood as a package-specific tool for thinking about error characterization, not a universally recognized classification scheme.
+
 Different datasets support different error-specification strategies. The appropriate method depends on **how much you actually know about measurement reliability**:
 
 | Knowledge Level | What you know | Appropriate method | Example |

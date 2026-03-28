@@ -62,11 +62,13 @@ The likelihood is a heteroscedastic Gaussian:
 
 $$X_{ij} \mid F, G \sim \mathcal{N}\left(\sum_k F_{ik}\, G_{kj},\; \sigma_{ij}^2\right)$$
 
-The priors are truncated exponential (equivalent to imposing non-negativity):
+The priors are exponential distributions, which enforce non-negativity while inducing sparsity:
 
 $$F_{ik} \sim \text{Exp}(\lambda_F), \quad G_{kj} \sim \text{Exp}(\lambda_G)$$
 
-where $\lambda_F$ and $\lambda_G$ control the prior strength (smaller λ pushes harder toward zero). By default, these are learned from data via hierarchical Bayes. Optional: use hierarchical Gamma priors on λ (`learn_hyperparams=True`, default) or fix them (`learn_hyperparams=False`).
+**Important:** The exponential prior is not merely a non-negativity constraint; it is a *sparsity-inducing* prior. The exponential distribution with rate $\lambda$ places most of its mass near zero and decays exponentially. Smaller $\lambda_F$ and $\lambda_G$ induce stronger shrinkage toward zero and more sparsity in the factor matrices. This is a substantive modeling choice that influences factor structure and should not be confused with a neutral non-negativity prior (e.g., a uniform distribution on [0, ∞)).
+
+By default, $\lambda_F$ and $\lambda_G$ are learned from data via hierarchical Bayes (`learn_hyperparams=True`, default), automatically tuning the sparsity strength. You can also fix them (`learn_hyperparams=False`) to impose a specific level of shrinkage.
 
 ## Convergence Diagnostics: How to Read Them
 
@@ -76,7 +78,7 @@ Three diagnostics assess whether the Gibbs sampler has converged:
 
 Run multiple chains from different starting points. If the between-chain variance equals the within-chain variance, chains have converged. Rhat is the ratio of total variance to within-chain variance.
 
-- **Rhat < 1.05:** Chains have converged. Reliable inference.
+- **Rhat < 1.05:** Chains have converged. Reliable inference. (Note: This package uses a stricter-than-standard threshold. Gelman & Rubin 1992 recommended Rhat < 1.2; Brooks & Gelman 1998 popularized 1.1. The 1.05 threshold follows recent Bayesian practice, e.g., Vehtari et al. 2021 for rank-normalized Rhat, applied here to standard Rhat for consistency.)
 - **1.05 < Rhat < 1.1:** Marginal. Consider longer burn-in or more samples.
 - **Rhat > 1.1:** Chains have not converged. The posterior samples are not from the stationary distribution.
 
@@ -114,9 +116,9 @@ print(f"Label switch gap: {result.label_switch_gap:.2f}")  # Should be close to 
 
 **What it does:** Learns a per-factor precision hyperparameter $\alpha_k$. Factors with high α are precise (kept); factors with low α are vague (pruned).
 
-**What it provides:** A data-driven factor count, not analyst judgment. The `factor_count_posterior` gives P(k active factors | data).
+**What it provides:** A data-and-model-driven estimate of factor count. The `factor_count_posterior` gives P(k active factors | data, model, sampler). This is not purely "data-driven"; it depends on initialization, sampler convergence, the exponential prior family, and algorithmic choices. ARD is useful for identifying a candidate factor count, but should be treated as a data-informed suggestion rather than an objective statistical test.
 
-**What it doesn't guarantee:** That the pruned factors are truly absent. ARD can spuriously prune factors if the data are sparse, or falsely retain factors if the model is misspecified.
+**What it doesn't guarantee:** That the pruned factors are truly absent. ARD can spuriously prune factors if the data are sparse, the sampler hasn't mixed well, or the prior family is misspecified. Conversely, it can falsely retain factors if multiple modes in the posterior are not fully explored. Always use `ard_threshold` sensitivity analysis: if factor count changes substantially between threshold=0.005 and threshold=0.05, the result is threshold-dependent and should be reported as uncertain.
 
 **Key parameter:** `ard_threshold` (default 0.01). Factors with $\alpha_k$ below this threshold are considered pruned. Test sensitivity: if factor count changes substantially between threshold=0.005 and threshold=0.05, the result is threshold-dependent and should be reported as uncertain.
 

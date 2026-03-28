@@ -55,12 +55,12 @@ result = pmf(X, sigma, p=3, algorithm="ls-nmf", max_iter=5000)
 
 ## Newton — **Use when you want the most rigorous point estimate**
 
-**What it does:** Gauss-Newton solver that solves the joint normal equations for $(F, G)$ using second-derivative information. This is the approach used in Paatero's original PMF2 and ME-2 solvers (though their exact implementation details remain partially undocumented).
+**What it does:** Gauss-Newton solver that uses second-derivative information to solve for factor updates. Paatero's PMF2 used Newton-like methods; EPA PMF 5.0 uses the proprietary ME-2 (Multilinear Engine v2), whose exact algorithms are not published.
 
 **Why it exists:**
-- **Exact Hessian:** Each iteration uses second-derivative information to find the optimal step size.
-- **Lineage:** Closest to EPA PMF's internals; reproduces PMF2/ME-2 behavior for validation studies.
-- **Most mathematically principled:** If you're writing a paper that needs to cite "state-of-the-art constrained optimization," Newton is that algorithm.
+- **Second-derivative step control:** Each iteration uses approximate Hessian information for step-size determination.
+- **Validation studies:** When benchmarking against published PMF2 results or attempting to understand ME-2 behavior, Newton-based solvers provide a reference point (though ME-2's exact approach is undocumented).
+- **Conceptual precedent:** Gauss-Newton methods are well-studied and theoretically grounded, but this does not guarantee better results than ACLS on practical problems.
 
 **When to choose it:** For validation studies comparing against PMF2/ME-2, or when you need to publish results and want the most defensible solver. Not recommended for routine use (slow, poor scaling with size, still doesn't provide uncertainty bands).
 
