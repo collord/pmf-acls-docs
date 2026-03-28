@@ -63,7 +63,7 @@ rmses = []
 for p in p_range:
     result = pmf(X, sigma, p=p)
     # Compute norm-standardized RMSE
-    residual = X - result.F @ result.G
+    residual = X - result.G @ result.F
     weighted_residual = residual / sigma  # Element-wise weighting
     rmse = np.linalg.norm(weighted_residual) / np.sqrt(X.size)
     rmses.append(rmse)
@@ -130,7 +130,8 @@ from pmf_acls import pmf_bayes, compute_waic
 waics = {}
 for p in range(2, 9):
     result = pmf_bayes(X, sigma, p=p, store_samples=True, n_samples=2000)
-    waics[p] = compute_waic(X, sigma, result.F_samples, result.G_samples)
+    waic_dict = compute_waic(X, sigma, result.F_samples, result.G_samples)
+    waics[p] = waic_dict['waic']  # Extract scalar WAIC from dict
 
 best_p = min(waics, key=waics.get)
 print(f"Best p by WAIC: {best_p}")

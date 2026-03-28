@@ -65,10 +65,11 @@ print(f"Factor swaps (rotational instability): {disp.swap_counts}")
 ```python
 from pmf_acls import multistart_test
 
-ms = multistart_test(X, sigma, p=3, n_seeds=20)
-print(f"Solution stability: {ms.stability_metric}")
-# High stability = all seeds converge to same factors
-# Low stability = different seeds find different factors
+ms = multistart_test(X, sigma, p=3, n_displacements=20)
+Q_range_percent = (ms['Q_range'] / ms['Q_min']) * 100
+print(f"Q range: {Q_range_percent:.1f}% of minimum")
+# < 1% → very stable; < 10% → moderately stable; > 10% → ill-conditioned
+print(f"Number of different solutions found: {len(ms['all_results'])}")
 ```
 
 **When to use:** To detect ill-conditioned problems. If multistart reveals alternative factorizations, use DISP to assess which is more stable, or add constraints (FPEAK, Bayesian priors).

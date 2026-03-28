@@ -40,7 +40,7 @@ print(f"Profile uncertainty: {result.F_std}")  # Posterior std (uncertainty only
 **What it doesn't provide:** Rotational analysis (DISP remains necessary) or model adequacy assessment independent of sigma learning.
 
 ```python
-from pmf_acls import pmf
+from pmf_acls import pmf, factor_count_posterior
 
 # Full Bayesian with ARD factor count inference
 result = pmf(
@@ -51,7 +51,8 @@ result = pmf(
     n_samples=2000,
     n_burnin=1000,
 )
-print(f"Factor count posterior: {result.factor_count_posterior}")
+fcp = factor_count_posterior(result.factor_activity_samples)
+print(f"Factor count posterior: {fcp}")
 ```
 
 **Use case:** You want the data to determine factor count. You're willing to spend extra computation for uncertainty quantification and automated dimensionality.
@@ -60,7 +61,7 @@ print(f"Factor count posterior: {result.factor_count_posterior}")
 
 The likelihood is a heteroscedastic Gaussian:
 
-$$X_{ij} \mid F, G \sim \mathcal{N}\left(\sum_k F_{ik}\, G_{kj},\; \sigma_{ij}^2\right)$$
+$$X_{ij} \mid F, G \sim \mathcal{N}\left(\sum_k G_{ik}\, F_{kj},\; \sigma_{ij}^2\right)$$
 
 The priors are exponential distributions, which enforce non-negativity while inducing sparsity:
 
@@ -83,9 +84,13 @@ Run multiple chains from different starting points. If the between-chain varianc
 - **Rhat > 1.1:** Chains have not converged. The posterior samples are not from the stationary distribution.
 
 ```python
-from pmf_acls import gelman_rubin
+from pmf_acls import pmf, gelman_rubin
 
-rhat = gelman_rubin(result.G_samples)  # Must have run multiple chains
+# Run multiple chains with different random seeds
+results = [pmf(X, sigma, p=3, algorithm="bayes", n_samples=2000, random_seed=s) for s in range(4)]
+
+# Compute Gelman-Rubin statistic across chains
+rhat = gelman_rubin(*[r.Q_samples for r in results])
 print(f"Max Rhat: {rhat.max():.3f}")  # All should be < 1.05
 ```
 
@@ -99,9 +104,12 @@ Due to autocorrelation, posterior samples are not independent. ESS estimates the
 ```python
 from pmf_acls import effective_sample_size
 
-ess = effective_sample_size(result.G_samples)
-for k in range(result.p):
-    print(f"Factor {k}: ESS = {ess[k] / result.G_samples.shape[0]:.1%}")
+# Effective sample size estimates the equivalent number of independent draws
+ess = effective_sample_size(result.Q_samples)
+n_samples = result.Q_samples.shape[0]
+print(f"ESS / n_samples = {ess / n_samples:.1%}")
+if ess / n_samples < 0.1:
+    print("  (Low efficiency; chains are autocorrelated. Consider longer sampling.)")
 ```
 
 ### Label-Switch Gap
@@ -123,13 +131,16 @@ print(f"Label switch gap: {result.label_switch_gap:.2f}")  # Should be close to 
 **Key parameter:** `ard_threshold` (default 0.01). Factors with $\alpha_k$ below this threshold are considered pruned. Test sensitivity: if factor count changes substantially between threshold=0.005 and threshold=0.05, the result is threshold-dependent and should be reported as uncertain.
 
 ```python
+from pmf_acls import factor_count_posterior
+
 result = pmf(X, sigma, p=6, algorithm="bayes", ard=True, ard_threshold=0.01, n_samples=2000)
-print(f"Active factors: {result.n_active_factors}")
-print(f"Factor count posterior:\n{result.factor_count_posterior}")
+print(f"Active factors: {result.effective_p}")
+fcp = factor_count_posterior(result.factor_activity_samples)
+print(f"Factor count posterior:\n{fcp}")
 
 # Test threshold sensitivity
 for threshold in [0.005, 0.01, 0.02, 0.05]:
-    n_active = sum(result.factor_alpha >= threshold)
+    n_active = sum(result.ard_lambda_F >= threshold)
     print(f"  Threshold {threshold}: {n_active} factors")
 ```
 

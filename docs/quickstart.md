@@ -8,9 +8,9 @@ from pmf_acls import pmf
 
 # Generate synthetic data
 rng = np.random.default_rng(42)
-F_true = rng.gamma(2.0, 1.0, size=(100, 3))
-G_true = rng.gamma(1.0, 1.0, size=(3, 20))
-X = F_true @ G_true
+F_true = rng.gamma(2.0, 1.0, size=(3, 100))      # (factors, variables)
+G_true = rng.gamma(1.0, 1.0, size=(20, 3))       # (observations, factors)
+X = G_true @ F_true  # (observations, variables)
 sigma = 0.1 * X + 0.01
 
 # Solve
@@ -32,8 +32,8 @@ result = pmf_bayes(
     store_samples=True,
 )
 
-# Posterior mean profiles
-G_mean = result.G        # (p, n_vars)
+# Posterior mean contributions (observations, factors)
+G_mean = result.G        # (n_obs, p)
 G_std = result.G_std     # posterior uncertainty
 
 # Full posterior chains (if store_samples=True)

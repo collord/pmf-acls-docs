@@ -34,13 +34,19 @@ result = pmf(X, sigma, p=3, algorithm="bayes", ard=True)
 print(f"Factor count posterior: {result.factor_count_posterior}")
 
 # Compositional data (sediment, geochemistry)
-from pmf_acls import aitchison_nmf
-result = aitchison_nmf(X, sigma, p=3)  # Works in CLR space with delta-method weights
+from pmf_acls import aitchison_pmf
+result = aitchison_pmf(X, sigma, p=3)  # Works in CLR space with delta-method weights
 ```
 
 ## Convention Note
 
-**Matrix notation:** This package uses $X$ as (species × observations), which transposes the standard EPA PMF convention (observations × species). When comparing against EPA PMF outputs or publications following the Paatero & Tapper (1994) notation, transpose accordingly. Internally, $G$ is the contributions matrix (factors × observations) and $F$ is the profiles matrix (species × factors).
+**Matrix notation:** This package follows the Paatero 1994 convention:
+- $X$ is (observations × variables): each row is a sample, each column is a species/element
+- $G$ is (observations × factors): sample contributions to each factor
+- $F$ is (factors × variables): factor profiles
+- Reconstruction: $X \approx G @ F$
+
+This differs from some older literature (e.g., Lee & Seung 2001) which uses transposed conventions. When comparing against EPA PMF outputs or publications, check the stated convention.
 
 ```{toctree}
 :maxdepth: 2

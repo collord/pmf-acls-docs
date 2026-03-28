@@ -46,7 +46,7 @@ sweep = fpeak_sweep(X, sigma, p=3, fpeak_values=np.linspace(-2, 2, 9), verbose=T
 **Limitation:** Does not support FPEAK rotation analysis. If rotational ambiguity is a concern, use ACLS with `fpeak_sweep()` instead.
 
 ```python
-result = pmf(X, sigma, p=3, algorithm="ls-nmf", max_iter=5000)
+result = pmf(X, sigma, p=3, algorithm="ls-pmf", max_iter=5000)
 
 # LS-PMF converges more slowly; you may need higher max_iter
 ```

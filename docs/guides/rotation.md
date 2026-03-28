@@ -90,7 +90,7 @@ fig, axes = plt.subplots(1, 3, figsize=(12, 4))
 for k in range(3):
     ax = axes[k]
     for fpeak_idx, fpeak_val in enumerate(sweep.fpeak_values):
-        ax.plot(sweep.results[fpeak_val].F[:, k], label=f"FPEAK={fpeak_val:+.1f}", alpha=0.7)
+        ax.plot(sweep.results[fpeak_val].F[k, :], label=f"FPEAK={fpeak_val:+.1f}", alpha=0.7)
     ax.set_title(f"Factor {k}: Profile across rotations")
     ax.set_xlabel("Species")
     ax.set_ylabel("Profile loading")
@@ -139,8 +139,10 @@ result_diffuse = pmf(X, sigma, p=3, algorithm="bayes", warm_start=False,
 # Compare profiles
 import numpy as np
 for k in range(3):
-    peaked_sum = np.sum(result_peaked.F[result_peaked.F[:, k] > 0.01, k])
-    diffuse_sum = np.sum(result_diffuse.F[result_diffuse.F[:, k] > 0.01, k])
+    peaked_profile = result_peaked.F[k, :]
+    diffuse_profile = result_diffuse.F[k, :]
+    peaked_sum = np.sum(peaked_profile[peaked_profile > 0.01])
+    diffuse_sum = np.sum(diffuse_profile[diffuse_profile > 0.01])
     print(f"Factor {k}: Peaked={peaked_sum:.2f}, Diffuse={diffuse_sum:.2f}")
 ```
 

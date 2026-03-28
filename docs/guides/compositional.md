@@ -29,7 +29,7 @@ Two environmental science communities use matrix factorization for source apport
 |---|---|---|
 | Air quality monitoring (PM₂.₅, VOC, etc.) | Independent sources contribute absolute mass | `pmf()` (ACLS, Bayesian) |
 | Sediment fingerprinting | Samples are mixtures of fixed end-member sources | `simplex_pmf()` |
-| Compositional data (rocks, alloys, mixtures) | Relative fingerprints matter; absolute magnitudes are sample-dependent | `aitchison_nmf()` |
+| Compositional data (rocks, alloys, mixtures) | Relative fingerprints matter; absolute magnitudes are sample-dependent | `aitchison_pmf()` |
 
 ## The Geometry Problem: Why It Matters
 
@@ -53,7 +53,7 @@ In Euclidean space, these look like different compositions. But if we normalize:
 
 Row-normalizing contribution matrix G so that each sample's contributions sum to 1:
 
-$$G'_{kj} = \frac{G_{kj}}{\sum_k G_{kj}}$$
+$$G'_{ik} = \frac{G_{ik}}{\sum_k G_{ik}}$$
 
 Enforces the constraint, but:
 1. **Reconstruction breaks:** Post-hoc normalization changes the fit; $F (G') \neq X$ in general.
@@ -80,7 +80,7 @@ where $\text{GM}(x) = \sqrt[D]{\prod_i x_i}$ is the geometric mean.
 
 ### Weighted Aitchison Factorization
 
-`aitchison_nmf()` implements the full approach:
+`aitchison_pmf()` implements the full approach:
 
 1. **Transform to CLR space:** $\text{CLR}(X)$ maps compositions to the $(D-1)$-dimensional hyperplane in $\mathbb{R}^D$.
 2. **Weight via delta method:** Original per-element uncertainties σ propagate to CLR space via:
@@ -90,19 +90,19 @@ These weights preserve heteroscedastic information. Note: This is a diagonal app
 4. **Inverse transform:** $\text{CLR}^{-1}(F, G)$ recovers profiles as simplex-valid compositions and contributions.
 
 ```python
-from pmf_acls import aitchison_nmf
+from pmf_acls import aitchison_pmf
 
 # Data is compositional (rows sum to 1 or to a fixed total)
-result = aitchison_nmf(X, sigma, p=3)
+result = aitchison_pmf(X, sigma, p=3)
 
 # Profiles are on the simplex: row sums ≈ 1
-print(f"Profiles (sum to): {result.F.sum(axis=0)}")
+print(f"Profiles (sum to): {result.F.sum(axis=1)}")
 
 # Contributions are absolute quantities (recovered via inverse transform)
 print(f"Contributions: {result.G}")
 
-# Uncertainty fully accounts for compositional geometry
-print(f"Profile std: {result.F_std}")
+# Note: aitchison_pmf() returns a point estimate without analytical uncertainty.
+# For credible intervals, use bootstrap_uncertainty() or Bayesian inference.
 ```
 
 ## The `anchor` Parameter: Geometric Purity vs. Sensitivity
@@ -122,17 +122,17 @@ Trade-off: higher anchor → softer log transform → minor species less down-we
 **Recommendation:** Start with `anchor=0` for well-measured data. If trace species factors are suppressed, test `anchor=0.5*MDL` and `anchor=MDL` and compare factor structures. Report the chosen value.
 
 ```python
-result_strict = aitchison_nmf(X, sigma, p=3, anchor=0.0)
-result_moderate = aitchison_nmf(X, sigma, p=3, anchor=0.5)
-result_soft = aitchison_nmf(X, sigma, p=3, anchor=1.0)
+result_strict = aitchison_pmf(X, sigma, p=3, anchor=0.0)
+result_moderate = aitchison_pmf(X, sigma, p=3, anchor=0.5)
+result_soft = aitchison_pmf(X, sigma, p=3, anchor=1.0)
 
 # Compare factor profiles
 import matplotlib.pyplot as plt
 for k in range(3):
     plt.figure()
-    plt.plot(result_strict.F[:, k], label='anchor=0')
-    plt.plot(result_moderate.F[:, k], label='anchor=0.5')
-    plt.plot(result_soft.F[:, k], label='anchor=1.0')
+    plt.plot(result_strict.F[k, :], label='anchor=0')
+    plt.plot(result_moderate.F[k, :], label='anchor=0.5')
+    plt.plot(result_soft.F[k, :], label='anchor=1.0')
     plt.legend()
     plt.title(f"Factor {k}")
 ```
@@ -147,8 +147,8 @@ from pmf_acls import simplex_pmf
 # Hard simplex constraint: each sample's contributions sum exactly to 1
 result = simplex_pmf(X, sigma, p=3)
 
-# Contributions are normalized
-print(f"Contribution sums: {result.G.sum(axis=0)}")
+# Contributions are normalized: each sample (row) sums to 1
+print(f"Contribution sums per sample: {result.G.sum(axis=1)}")
 ```
 
 `simplex_pmf()` enforces the constraint during optimization (constrained NNLS solver), not post-hoc. It's more direct but less geometrically elegant than Aitchison NMF.
@@ -168,10 +168,10 @@ print(f"Contribution sums: {result.G.sum(axis=0)}")
 | Question | Answer | Use this |
 |---|---|---|
 | Are contributions absolute quantities (µg/m³)? | Yes | `pmf()` |
-| Are contributions fractional (%, ratios)? | Yes | `simplex_pmf()` or `aitchison_nmf()` |
-| Do you have many trace species? | Yes | `aitchison_nmf()` (with `anchor` tuning) |
+| Are contributions fractional (%, ratios)? | Yes | `simplex_pmf()` or `aitchison_pmf()` |
+| Do you have many trace species? | Yes | `aitchison_pmf()` (with `anchor` tuning) |
 | Do you need hard simplex constraint? | Yes | `simplex_pmf()` |
-| Do you want principled geometry? | Yes | `aitchison_nmf()` |
+| Do you want principled geometry? | Yes | `aitchison_pmf()` |
 
 ---
 
