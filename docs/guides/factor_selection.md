@@ -24,7 +24,7 @@ This chi-squared derivation requires three assumptions that **all three are viol
 
 3. **Known variances:** The derivation assumes σ are the *true* error standard deviations, not estimates. In practice, σ are always estimated from equations, replicate measurements, or ad-hoc formulas—introducing uncertainty that chi-squared theory ignores.
 
-Paatero (1993) himself acknowledged these violations, calling Q "asymptotically" chi-squared. He continued to use Q/Qexp as a useful *heuristic*, but warned that Q curves can produce "spurious shapes" and "unfounded choices of dimension." His own practice was to treat Q/Qexp as one diagnostic among several, not the final arbiter of factor count.
+Paatero (1997) himself acknowledged these violations, calling Q "asymptotically" chi-squared. He continued to use Q/Qexp as a useful *heuristic*, but warned that Q curves can produce "spurious shapes" and "unfounded choices of dimension." His own practice was to treat Q/Qexp as one diagnostic among several, not the final arbiter of factor count.
 
 ### What Q/Qexp Actually Tells You
 
