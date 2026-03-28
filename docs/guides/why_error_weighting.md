@@ -17,7 +17,7 @@ Different datasets support different error-specification strategies. The appropr
 | Knowledge Level | What you know | Appropriate method | Example |
 |---|---|---|---|
 | **Level 1** | Species-level patterns only | Unweighted NMF + feature scaling | Novel analyte, no QA history, non-routine monitoring |
-| **Level 2** | Dominant heteroscedasticity structure | LS-PMF with coarse weight classes | Water quality monitoring, soil surveys, mixed-method data |
+| **Level 2** | Dominant heteroscedasticity structure | LS-PMF (LS-NMF) with coarse weight classes | Water quality monitoring, soil surveys, mixed-method data |
 | **Level 3** | Equation-based observation-level estimates | PMF with *mandatory sensitivity testing* | CSN/IMPROVE PM2.5 (XRF, IC with decades of QA) |
 | **Level 4** | Replicate-validated uncertainties | PMF with full diagnostic suite | AMS with Poisson error model, high-end speciation |
 | **Level 5** | Want to learn error structure | Bayesian NMF with sigma learning | Research-driven, novel datasets, heteroscedastic exploration |

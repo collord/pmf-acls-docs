@@ -34,7 +34,7 @@ sweep = fpeak_sweep(X, sigma, p=3, fpeak_values=np.linspace(-2, 2, 9), verbose=T
 
 ## LS-PMF (Least Squares PMF) — **Use when monotone decrease matters**
 
-**What it does:** Weighted multiplicative update rules that monotonically decrease the objective $Q$ at each iteration. This is the algorithm used in ESAT (EPA's open-source successor to PMF 5.0).
+**What it does:** Weighted multiplicative update rules that monotonically decrease the objective $Q$ at each iteration. This package names this algorithm "LS-PMF"; the literature standard name is "LS-NMF" (Wang et al. 2006), and it is also used by ESAT (EPA's open-source successor to PMF 5.0).
 
 **Why it exists:**
 - **Monotone decrease guarantee:** Each iteration provably reduces (or leaves unchanged) the objective $Q$. This ensures descent-based progress and prevents oscillation, but does not guarantee escape from saddle points—only convergence to a stationary point. The NMF landscape is non-convex with many local minima and saddle points, so monotone decrease is about descent direction, not solution quality.
@@ -46,7 +46,7 @@ sweep = fpeak_sweep(X, sigma, p=3, fpeak_values=np.linspace(-2, 2, 9), verbose=T
 **Limitation:** Does not support FPEAK rotation analysis. If rotational ambiguity is a concern, use ACLS with `fpeak_sweep()` instead.
 
 ```python
-result = pmf(X, sigma, p=3, algorithm="ls-pmf", max_iter=5000)
+result = pmf(X, sigma, p=3, algorithm="ls-nmf", max_iter=5000)
 
 # LS-PMF converges more slowly; you may need higher max_iter
 ```

@@ -1,6 +1,6 @@
 # Uncertainty Quantification: Complementary Methods
 
-Point estimates from ACLS, LS-PMF, or Newton solvers are not enough. Different uncertainty quantification methods answer *different questions* about solution quality, and EPA PMF tradition recommends using all three. The Bayesian posterior adds a fourth, complementary layer.
+Point estimates from ACLS, LS-PMF (the package's name for LS-NMF), or Newton solvers are not enough. Different uncertainty quantification methods answer *different questions* about solution quality, and EPA PMF tradition recommends using all three. The Bayesian posterior adds a fourth, complementary layer.
 
 ## Bootstrap: Does the data structure support these factors?
 
