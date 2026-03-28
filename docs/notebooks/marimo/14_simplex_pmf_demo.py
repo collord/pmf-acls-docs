@@ -150,18 +150,18 @@ def _(
     _p = n_sources_slider.value
 
     # True source profiles (arbitrary non-negative, not on the simplex)
-    F_true = _rng.exponential(1.0, size=(_m, _p))
+    F_true = _rng.exponential(1.0, size=(_p, _m))
     # Make profiles more distinct by concentrating mass in different variables
     for _k in range(_p):
         _dominant = _rng.choice(_m, size=max(2, _m // _p), replace=False)
-        F_true[_dominant, _k] *= 5.0
+        F_true[_k, _dominant] *= 5.0
 
     # True fractional contributions on the simplex (columns sum to 1)
     _alpha = np.ones(_p) * 2.0
-    G_true = _rng.dirichlet(_alpha, size=_n).T  # (p, n)
+    G_true = _rng.dirichlet(_alpha, size=_n)  # (n, p)
 
     # Clean signal + noise
-    X_clean = F_true @ G_true
+    X_clean = G_true @ F_true
     _sigma_true = noise_slider.value * np.maximum(X_clean, 0.01) + 0.001
     X = np.maximum(X_clean + _rng.normal(0, _sigma_true), 1e-8)
     sigma = noise_slider.value * np.maximum(X, 0.01) + 0.001
@@ -169,9 +169,9 @@ def _(
     var_names = [f"V{_i+1:02d}" for _i in range(_m)]
 
     mo.md(
-        f"**Data**: {_m} variables x {_n} observations, "
+        f"**Data**: {_n} observations x {_m} variables, "
         f"**{_p} true sources**, noise = {noise_slider.value:.0%}\n\n"
-        f"True G column sums: all = 1.0 (by construction)"
+        f"True G row sums: all = 1.0 (by construction)"
     )
     return F_true, G_true, X, sigma, var_names
 
@@ -197,8 +197,8 @@ def _(mo):
 
 @app.cell
 def _(F_true, X, mo, np, pmf, sigma, simplex_pmf):
-    _p = F_true.shape[1]
-    _m, _n = X.shape
+    _p = F_true.shape[0]
+    _n, _m = X.shape
 
     # Standard PMF (best of 5 seeds)
     _best_Q = np.inf
@@ -217,19 +217,19 @@ def _(F_true, X, mo, np, pmf, sigma, simplex_pmf):
         simplex_tol=1e-4, conv_tol=0.001,
     )
 
-    _col_sums_std = r_std.G.sum(axis=0)
-    _col_sums_sim = r_simplex.G.sum(axis=0)
+    _row_sums_std = r_std.G.sum(axis=1)
+    _row_sums_sim = r_simplex.G.sum(axis=1)
 
     mo.md(
         f"| | Standard PMF | Simplex PMF |\n"
         f"|---|---:|---:|\n"
         f"| Q | {r_std.Q:.2f} | {r_simplex.Q:.2f} |\n"
-        f"| Q/mn | {r_std.Q / (_m * _n):.4f} | {r_simplex.Q / (_m * _n):.4f} |\n"
+        f"| Q/mn | {r_std.Q / (_n * _m):.4f} | {r_simplex.Q / (_n * _m):.4f} |\n"
         f"| Converged | {r_std.converged} | {r_simplex.converged} |\n"
-        f"| G col-sum mean | {_col_sums_std.mean():.4f} | {_col_sums_sim.mean():.4f} |\n"
-        f"| G col-sum std | {_col_sums_std.std():.4f} | {_col_sums_sim.std():.4f} |\n"
-        f"| G col-sum range | [{_col_sums_std.min():.3f}, {_col_sums_std.max():.3f}] "
-        f"| [{_col_sums_sim.min():.4f}, {_col_sums_sim.max():.4f}] |\n"
+        f"| G row-sum mean | {_row_sums_std.mean():.4f} | {_row_sums_sim.mean():.4f} |\n"
+        f"| G row-sum std | {_row_sums_std.std():.4f} | {_row_sums_sim.std():.4f} |\n"
+        f"| G row-sum range | [{_row_sums_std.min():.3f}, {_row_sums_std.max():.3f}] "
+        f"| [{_row_sums_sim.min():.4f}, {_row_sums_sim.max():.4f}] |\n"
         f"\nQ increases under the simplex constraint — this is expected. "
         f"The constraint restricts the feasible set, so the optimizer "
         f"cannot reach the same minimum."

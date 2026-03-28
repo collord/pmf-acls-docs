@@ -63,20 +63,20 @@ def _():
 def _(linear_sum_assignment, np):
     def make_synthetic(rng, m=15, n=100, p=3, noise_frac=0.05):
         """Sparse-profile synthetic data."""
-        F = np.full((m, p), 0.005)
+        F = np.full((p, m), 0.005)
         for k in range(p):
             n_load = max(2, int(round(0.3 * m)))
             vars_k = rng.choice(m, size=n_load, replace=False)
-            F[vars_k, k] += rng.exponential(0.5, size=n_load)
+            F[k, vars_k] += rng.exponential(0.5, size=n_load)
         for k in range(p):
-            F[:, k] /= F[:, k].sum()
+            F[k, :] /= F[k, :].sum()
 
         scales = np.logspace(np.log10(40), np.log10(8), p)
-        G = np.zeros((p, n))
+        G = np.zeros((n, p))
         for k in range(p):
-            G[k, :] = rng.exponential(scales[k], size=n)
+            G[:, k] = rng.exponential(scales[k], size=n)
 
-        X_true = F @ G
+        X_true = G @ F
         sigma = noise_frac * np.maximum(X_true, 0.01) + 0.005
         noise = rng.normal(0, sigma)
         X_clean = np.maximum(X_true + noise, 0.0)
@@ -97,11 +97,11 @@ def _(linear_sum_assignment, np):
 
     def match_factors(F_est, F_true):
         """Hungarian matching by absolute correlation."""
-        p_est, p_true = F_est.shape[1], F_true.shape[1]
+        p_est, p_true = F_est.shape[0], F_true.shape[0]
         corr = np.zeros((p_est, p_true))
         for i in range(p_est):
             for j in range(p_true):
-                c = np.corrcoef(F_est[:, i], F_true[:, j])[0, 1]
+                c = np.corrcoef(F_est[i, :], F_true[j, :])[0, 1]
                 corr[i, j] = c if np.isfinite(c) else 0.0
         row_ind, col_ind = linear_sum_assignment(-np.abs(corr))
         return row_ind, col_ind, corr

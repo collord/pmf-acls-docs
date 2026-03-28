@@ -118,18 +118,18 @@ def _(mo):
 def _(np):
     rng = np.random.default_rng(42)
 
-    m, n, p_true = 10, 100, 3
+    n, m, p_true = 100, 10, 3
     var_names = [f"Spec_{i+1}" for i in range(m)]
 
     # True source profiles and contributions
-    F_true = rng.random((m, p_true)) + 0.5
-    G_true = rng.random((p_true, n)) + 0.5
+    G_true = rng.random((n, p_true)) + 0.5
+    F_true = rng.random((p_true, m)) + 0.5
 
     # Observed data with heteroscedastic noise
-    X_raw = F_true @ G_true + 0.15 * rng.standard_normal((m, n))
+    X_raw = G_true @ F_true + 0.15 * rng.standard_normal((n, m))
 
     # Inject data-quality issues
-    X_raw[2, 50:55] = np.nan       # missing values
+    X_raw[50:55, 2] = np.nan       # missing values
     X_raw[X_raw < 0.2] = -0.1      # below detection limit
 
     detection_limits = 0.2 * np.ones(m)

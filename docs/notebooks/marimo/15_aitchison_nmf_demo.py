@@ -68,9 +68,9 @@ def _():
 
     from pmf_acls import pmf
     from pmf_acls.core import simplex_pmf
-    from pmf_acls.coda import aitchison_nmf, closure
+    from pmf_acls.coda import aitchison_pmf, closure
 
-    return aitchison_nmf, closure, mo, np, plt, pmf, simplex_pmf
+    return aitchison_pmf, closure, mo, np, plt, pmf, simplex_pmf
 
 
 # --- Configuration ---
@@ -177,28 +177,28 @@ def _(
     _scales = np.array([s.value for s in source_scale_sliders])
     _p = len(_scales)
 
-    # True source profiles on the simplex (columns sum to 1)
+    # True source profiles on the simplex (rows sum to 1)
     # Each source loads on a random subset of variables (sparser for weaker sources)
-    F_true = np.full((_m, _p), 0.01)
+    F_true = np.full((_p, _m), 0.01)
     for _k in range(_p):
         _frac = max(0.15, min(0.5, 0.1 + 0.01 * _scales[_k]))
         _n_load = max(2, int(round(_frac * _m)))
         _n_load = min(_n_load, _m)
         _chosen = _rng.choice(_m, size=_n_load, replace=False)
-        F_true[_chosen, _k] += _rng.exponential(
+        F_true[_k, _chosen] += _rng.exponential(
             max(0.1, 0.01 * _scales[_k]), size=_n_load,
         )
-    # Normalize columns to simplex
+    # Normalize rows to simplex
     for _k in range(_p):
-        F_true[:, _k] /= F_true[:, _k].sum()
+        F_true[_k, :] /= F_true[_k, :].sum()
 
     # Source contributions with configurable strengths
-    G_true = np.zeros((_p, _n))
+    G_true = np.zeros((_n, _p))
     for _k in range(_p):
-        G_true[_k, :] = _rng.exponential(_scales[_k], size=_n)
+        G_true[:, _k] = _rng.exponential(_scales[_k], size=_n)
 
     # Clean signal + noise
-    X_clean = F_true @ G_true
+    X_clean = G_true @ F_true
     _sigma_frac = noise_slider.value
     _sigma_true = _sigma_frac * np.maximum(X_clean, 0.01) + 0.001
     X_raw = np.maximum(X_clean + _rng.normal(0, _sigma_true), 1e-8)
@@ -219,15 +219,15 @@ def _(
     for _k in range(_p):
         _strength = "strong" if _scales[_k] >= 30 else "medium" if _scales[_k] >= 8 else "weak"
         _rows.append(
-            f"| {source_names[_k]} | {_strength} | {_scales[_k]:.1f} | {G_true[_k].mean():.1f} |"
+            f"| {source_names[_k]} | {_strength} | {_scales[_k]:.1f} | {G_true[:, _k].mean():.1f} |"
         )
 
-    _X_true = F_true @ G_true
+    _X_true = G_true @ F_true
     _snr_power = np.sum(_X_true**2) / np.sum(sigma**2)
     _snr_db = 10 * np.log10(_snr_power)
 
     mo.md(
-        f"**Data**: {_m} variables × {_n} observations, "
+        f"**Data**: {_n} observations × {_m} variables, "
         f"**{_p} true sources**, noise = {_sigma_frac:.0%}, "
         f"closed = {close_toggle.value}, "
         f"SNR = {_snr_power:.1f} ({_snr_db:.1f} dB)\n\n"
@@ -259,11 +259,11 @@ def _(mo):
 
 @app.cell
 def _(
-    F_true, X, aitchison_nmf, anchor_number, close_toggle, mo,
+    F_true, X, aitchison_pmf, anchor_number, close_toggle, mo,
     n_starts_slider, np, pmf, sigma, simplex_pmf,
 ):
-    _p = F_true.shape[1]
-    _m, _n = X.shape
+    _p = F_true.shape[0]
+    _n, _m = X.shape
     _n_starts = n_starts_slider.value
     _anchor = anchor_number.value
     _closed = close_toggle.value
@@ -286,7 +286,7 @@ def _(
     _best_Q_ait = np.inf
     r_ait = None
     for _seed in range(_n_starts):
-        _r = aitchison_nmf(X, sigma, _p, max_iter=2000, tol=1e-6,
+        _r = aitchison_pmf(X, sigma, _p, max_iter=2000, tol=1e-6,
                            anchor=_anchor, random_seed=_seed)
         if _r.Q < _best_Q_ait:
             _best_Q_ait = _r.Q
@@ -803,9 +803,9 @@ def _(mo):
         ### Usage
 
         ```python
-        from pmf_acls import aitchison_nmf
+        from pmf_acls import aitchison_pmf
 
-        result = aitchison_nmf(X, sigma, p=3, random_seed=42)
+        result = aitchison_pmf(X, sigma, p=3, random_seed=42)
         # result.F — factor profiles (m, p)
         # result.G — contributions (p, n)
         # result.Q — Aitchison cost (not comparable to standard Q)

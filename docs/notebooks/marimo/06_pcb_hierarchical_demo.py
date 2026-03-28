@@ -115,55 +115,55 @@ def _(np):
         cl_perm = cl_number[perm]
         var_names = [CONGENER_NAMES[i] for i in perm]
 
-        F = np.full((m, p), 0.005)  # small baseline everywhere
+        F = np.full((p, m), 0.005)  # small baseline everywhere
 
         # Aroclor 1242: peaks at tri/tetra-CB (cl 2-4)
         for i in range(m):
             if cl_perm[i] <= 4:
-                F[i, 0] += rng.exponential(0.4)
+                F[0, i] += rng.exponential(0.4)
             elif cl_perm[i] <= 5:
-                F[i, 0] += rng.exponential(0.05)
+                F[0, i] += rng.exponential(0.05)
 
         # Aroclor 1254: peaks at penta/hexa-CB (cl 5-6)
         for i in range(m):
             if 4 <= cl_perm[i] <= 6:
-                F[i, 1] += rng.exponential(0.4)
+                F[1, i] += rng.exponential(0.4)
             elif cl_perm[i] == 7:
-                F[i, 1] += rng.exponential(0.05)
+                F[1, i] += rng.exponential(0.05)
 
         # Aroclor 1260: peaks at hexa/hepta-CB (cl 6-8)
         for i in range(m):
             if 6 <= cl_perm[i] <= 8:
-                F[i, 2] += rng.exponential(0.4)
+                F[2, i] += rng.exponential(0.4)
             elif cl_perm[i] == 9:
-                F[i, 2] += rng.exponential(0.1)
+                F[2, i] += rng.exponential(0.1)
 
         # Atmospheric deposition: minor, diffuse, biased lighter
         for i in range(m):
             weight = max(0.0, 1.0 - (cl_perm[i] - 3) * 0.15)
-            F[i, 3] += rng.exponential(0.05 * weight + 0.01)
+            F[3, i] += rng.exponential(0.05 * weight + 0.01)
 
-        # Normalize columns to unit L1
+        # Normalize rows to unit L1
         for k in range(p):
-            F[:, k] /= F[:, k].sum()
+            F[k, :] /= F[k, :].sum()
 
         # Source contributions (G): Aroclors are major, atm dep is minor
         scales = np.array([80.0, 60.0, 50.0, 8.0])
-        G = np.zeros((p, n))
+        G = np.zeros((n, p))
         for k in range(p):
-            G[k, :] = rng.exponential(scales[k], size=n)
+            G[:, k] = rng.exponential(scales[k], size=n)
 
-        X_true = F @ G
+        X_true = G @ F
         return X_true, F, G, var_names
 
     def match_factors(F_est, F_true, linear_sum_assignment):
         """Hungarian matching of estimated to true factors by correlation."""
-        p_est = F_est.shape[1]
-        p_true = F_true.shape[1]
+        p_est = F_est.shape[0]
+        p_true = F_true.shape[0]
         corr = np.zeros((p_est, p_true))
         for i in range(p_est):
             for j in range(p_true):
-                c = np.corrcoef(F_est[:, i], F_true[:, j])[0, 1]
+                c = np.corrcoef(F_est[i, :], F_true[j, :])[0, 1]
                 corr[i, j] = c if np.isfinite(c) else 0.0
         row_ind, col_ind = linear_sum_assignment(-np.abs(corr))
         return row_ind, col_ind, corr

@@ -27,24 +27,24 @@ def _(mo):
         # Basic PMF Example
 
         **Positive Matrix Factorization (PMF)** decomposes a data matrix
-        $X$ (variables x observations) into two non-negative matrices:
+        $X$ (observations × variables) into two non-negative matrices:
 
-        $$X \approx F \cdot G$$
+        $$X \approx G \cdot F$$
 
         where:
 
-        - **F** (m x p) — *factor profiles*: each column describes one source's
+        - **G** (n × p) — *factor contributions*: each row describes how strongly
+          the factors contribute to each observation.
+        - **F** (p × m) — *factor profiles*: each row describes one source's
           fingerprint across the measured variables.
-        - **G** (p x n) — *factor contributions*: each row describes how strongly
-          one source contributes to each observation.
 
         Unlike ordinary NMF, PMF uses **per-element uncertainty weights**
         $\sigma_{ij}$. The objective it minimises is the weighted chi-squared
         statistic:
 
-        $$Q = \sum_{i,j} \left(\frac{X_{ij} - (FG)_{ij}}{\sigma_{ij}}\right)^2$$
+        $$Q = \sum_{i,j} \left(\frac{X_{ij} - (GF)_{ij}}{\sigma_{ij}}\right)^2$$
 
-        A good fit has $Q / (m \cdot n) \approx 1$, meaning residuals are
+        A good fit has $Q / (n \cdot m) \approx 1$, meaning residuals are
         on average one standard deviation of measurement uncertainty.
 
         This notebook walks through the simplest possible workflow:
@@ -95,15 +95,15 @@ def _(mo):
 def _(np):
     rng = np.random.default_rng(42)
 
-    m, n, p_true = 10, 50, 3  # 10 variables, 50 observations, 3 true factors
+    n, m, p_true = 50, 10, 3  # 50 observations, 10 variables, 3 true factors
 
-    # True factor profiles (F) and contributions (G)
-    F_true = rng.uniform(0.5, 1.5, size=(m, p_true))
-    G_true = rng.uniform(0.5, 1.5, size=(p_true, n))
+    # True factor contributions (G) and profiles (F)
+    G_true = rng.uniform(0.5, 1.5, size=(n, p_true))     # (observations, factors)
+    F_true = rng.uniform(0.5, 1.5, size=(p_true, m))     # (factors, variables)
 
-    # Generate data: X = F @ G + noise
-    noise = 0.1 * rng.standard_normal(size=(m, n))
-    X = F_true @ G_true + noise
+    # Generate data: X = G @ F + noise
+    noise = 0.1 * rng.standard_normal(size=(n, m))
+    X = G_true @ F_true + noise
 
     # Uncertainties (constant for simplicity)
     sigma = 0.1 * np.ones_like(X)

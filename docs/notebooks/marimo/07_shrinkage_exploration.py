@@ -72,22 +72,22 @@ def _(linear_sum_assignment, np):
         chosen variables (exponential magnitudes), with a small baseline for the
         rest.  Two factors are "dominant" (high G scale), the rest moderate/minor.
         """
-        F = np.full((m, p), 0.005)
+        F = np.full((p, m), 0.005)
         n_load = max(2, int(round(sparsity * m)))
         for k in range(p):
             vars_k = rng.choice(m, size=n_load, replace=False)
-            F[vars_k, k] += rng.exponential(0.5, size=n_load)
+            F[k, vars_k] += rng.exponential(0.5, size=n_load)
 
         for k in range(p):
-            F[:, k] /= F[:, k].sum()
+            F[k, :] /= F[k, :].sum()
 
         # Dominant-to-minor gradient in G scales
         scales = np.logspace(np.log10(50), np.log10(5), p)
-        G = np.zeros((p, n))
+        G = np.zeros((n, p))
         for k in range(p):
-            G[k, :] = rng.exponential(scales[k], size=n)
+            G[:, k] = rng.exponential(scales[k], size=n)
 
-        X_true = F @ G
+        X_true = G @ F
         sigma = noise_frac * np.maximum(X_true, 0.01) + 0.005
         noise = rng.normal(0, sigma)
         X = np.maximum(X_true + noise, 0.0)
@@ -95,18 +95,18 @@ def _(linear_sum_assignment, np):
 
     def match_factors(F_est, F_true):
         """Hungarian matching by absolute correlation."""
-        p_est, p_true = F_est.shape[1], F_true.shape[1]
+        p_est, p_true = F_est.shape[0], F_true.shape[0]
         corr = np.zeros((p_est, p_true))
         for i in range(p_est):
             for j in range(p_true):
-                c = np.corrcoef(F_est[:, i], F_true[:, j])[0, 1]
+                c = np.corrcoef(F_est[i, :], F_true[j, :])[0, 1]
                 corr[i, j] = c if np.isfinite(c) else 0.0
         row_ind, col_ind = linear_sum_assignment(-np.abs(corr))
         return row_ind, col_ind, corr
 
     def normalize_l1(F):
-        """L1-normalise each column of F to sum to 1."""
-        return F / F.sum(axis=0, keepdims=True)
+        """L1-normalise each row of F to sum to 1."""
+        return F / F.sum(axis=1, keepdims=True)
 
     def compute_bias(F_est, F_true, row_ind, col_ind, top_k=3):
         """
@@ -117,8 +117,8 @@ def _(linear_sum_assignment, np):
         """
         dom, minor = [], []
         for ke, kt in zip(row_ind, col_ind):
-            g_true = F_true[:, kt]
-            g_est = F_est[:, ke]
+            g_true = F_true[kt, :]
+            g_est = F_est[ke, :]
             order = np.argsort(-g_true)
             mask = g_true > 0.01  # only non-trivial vars
             top = order[:top_k]

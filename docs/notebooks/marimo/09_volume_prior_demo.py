@@ -85,42 +85,42 @@ def _(np):
         ]
         var_names = [f"V{i+1:02d}" for i in range(m)]
 
-        F = np.full((m, p), 0.01)  # small baseline
+        F = np.full((p, m), 0.01)  # small baseline
 
         # Major: Combustion — ~40% of variables with varying loads
         _n_load = max(2, int(round(0.4 * m)))
         _vars0 = rng.choice(m, size=_n_load, replace=False)
-        F[_vars0, 0] += rng.exponential(0.5, size=_n_load)
+        F[0, _vars0] += rng.exponential(0.5, size=_n_load)
 
         # Major: Mineral dust — ~30% of variables
         _n_load = max(2, int(round(0.3 * m)))
         _vars1 = rng.choice(m, size=_n_load, replace=False)
-        F[_vars1, 1] += rng.exponential(0.4, size=_n_load)
+        F[1, _vars1] += rng.exponential(0.4, size=_n_load)
 
         # Moderate: Sea salt — ~25% of variables
         _n_load = max(2, int(round(0.25 * m)))
         _vars2 = rng.choice(m, size=_n_load, replace=False)
-        F[_vars2, 2] += rng.exponential(0.3, size=_n_load)
+        F[2, _vars2] += rng.exponential(0.3, size=_n_load)
 
         # Minor: Industrial trace — 2-3 variables, sharp spikes
         _n_load = min(3, m)
         _vars3 = rng.choice(m, size=_n_load, replace=False)
-        F[_vars3, 3] += np.array([0.6, 0.3, 0.2])[:_n_load]
+        F[3, _vars3] += np.array([0.6, 0.3, 0.2])[:_n_load]
 
         # Minor: Biomass burning — 2-3 variables, sharp spikes
         _n_load = min(3, m)
         _vars4 = rng.choice(m, size=_n_load, replace=False)
-        F[_vars4, 4] += np.array([0.4, 0.2, 0.15])[:_n_load]
+        F[4, _vars4] += np.array([0.4, 0.2, 0.15])[:_n_load]
 
         for k in range(p):
-            F[:, k] /= F[:, k].sum()
+            F[k, :] /= F[k, :].sum()
 
         scales = np.array([50.0, 40.0, 15.0, 3.0, 2.0])
-        G = np.zeros((p, n))
+        G = np.zeros((n, p))
         for k in range(p):
-            G[k, :] = rng.exponential(scales[k], size=n)
+            G[:, k] = rng.exponential(scales[k], size=n)
 
-        X_true = F @ G
+        X_true = G @ F
         sigma = noise_frac * np.maximum(X_true, 0.01) + 0.005
         noise = rng.normal(0, sigma)
         X = np.maximum(X_true + noise, 0.0)
@@ -129,12 +129,12 @@ def _(np):
 
     def match_factors(F_est, F_true, linear_sum_assignment):
         """Hungarian matching of estimated to true factors by correlation."""
-        p_est = F_est.shape[1]
-        p_true = F_true.shape[1]
+        p_est = F_est.shape[0]
+        p_true = F_true.shape[0]
         corr = np.zeros((p_est, p_true))
         for i in range(p_est):
             for j in range(p_true):
-                c = np.corrcoef(F_est[:, i], F_true[:, j])[0, 1]
+                c = np.corrcoef(F_est[i, :], F_true[j, :])[0, 1]
                 corr[i, j] = c if np.isfinite(c) else 0.0
         row_ind, col_ind = linear_sum_assignment(-np.abs(corr))
         return row_ind, col_ind, corr
@@ -179,24 +179,24 @@ def _(make_synthetic, mo, noise_slider, n_vars_slider, n_obs_slider, np, seed_nu
         noise_frac=noise_slider.value,
     )
     _m, _n = X.shape
-    _p_true = F_true.shape[1]
-    _X_true = F_true @ G_true
+    _p_true = F_true.shape[0]
+    _X_true = G_true @ F_true
     _snr_power = np.sum(_X_true**2) / np.sum(sigma**2)
     _snr_db = 10 * np.log10(_snr_power)
 
     mo.md(
         f"""
-        **Data**: {_m} variables x {_n} observations, {_p_true} true sources
+        **Data**: {_n} observations x {_m} variables, {_p_true} true sources
         &nbsp;|&nbsp; **Noise fraction = {noise_slider.value:.2f}
         -> SNR = {_snr_power:.1f} ({_snr_db:.1f} dB)**
 
         | Source | Mean contribution |
         |--------|:-----------------:|
-        | {source_names[0]} (major) | {G_true[0].mean():.0f} |
-        | {source_names[1]} (major) | {G_true[1].mean():.0f} |
-        | {source_names[2]} (moderate) | {G_true[2].mean():.0f} |
-        | {source_names[3]} (**minor**) | {G_true[3].mean():.1f} |
-        | {source_names[4]} (**minor**) | {G_true[4].mean():.1f} |
+        | {source_names[0]} (major) | {G_true[:, 0].mean():.0f} |
+        | {source_names[1]} (major) | {G_true[:, 1].mean():.0f} |
+        | {source_names[2]} (moderate) | {G_true[:, 2].mean():.0f} |
+        | {source_names[3]} (**minor**) | {G_true[:, 3].mean():.1f} |
+        | {source_names[4]} (**minor**) | {G_true[:, 4].mean():.1f} |
         """
     )
     return X, sigma, F_true, G_true, source_names, var_names

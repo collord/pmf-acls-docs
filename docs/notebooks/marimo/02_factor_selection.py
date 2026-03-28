@@ -81,7 +81,7 @@ def _(mo):
         r"""
         ## Generate synthetic data with a known number of factors
 
-        We create an 8-variable, 40-observation dataset generated from exactly
+        We create a 40-observation, 8-variable dataset generated from exactly
         **3 true factors** plus Gaussian noise.  Because we know the ground truth
         we can verify that the selection procedure recovers *p = 3*.
         """
@@ -93,11 +93,11 @@ def _(mo):
 def _(np):
     rng = np.random.default_rng(42)
 
-    m, n, p_true = 8, 40, 3
+    n, m, p_true = 40, 8, 3
 
-    F_true = rng.random((m, p_true)) + 0.5
-    G_true = rng.random((p_true, n)) + 0.5
-    X = F_true @ G_true + 0.1 * rng.standard_normal((m, n))
+    G_true = rng.random((n, p_true)) + 0.5
+    F_true = rng.random((p_true, m)) + 0.5
+    X = G_true @ F_true + 0.1 * rng.standard_normal((n, m))
     sigma = 0.1 * np.ones_like(X)
 
     return F_true, G_true, X, m, n, p_true, sigma
@@ -107,7 +107,7 @@ def _(np):
 def _(m, mo, n, p_true):
     mo.md(
         f"""
-        **Data dimensions:** {m} variables x {n} observations
+        **Data dimensions:** {n} observations x {m} variables
 
         **True number of factors:** {p_true}
 

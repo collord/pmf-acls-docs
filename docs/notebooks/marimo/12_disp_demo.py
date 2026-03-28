@@ -83,23 +83,23 @@ def _(np):
         source_names = [f"Source {k+1}" for k in range(p)]
         var_names = [f"V{i+1:02d}" for i in range(m)]
 
-        F = np.full((m, p), 0.01)
+        F = np.full((p, m), 0.01)
         for k in range(p):
             frac = max(0.15, min(0.5, 0.1 + 0.01 * scales[k]))
             n_load = max(2, int(round(frac * m)))
             n_load = min(n_load, m)
             chosen = rng.choice(m, size=n_load, replace=False)
-            F[chosen, k] += rng.exponential(
+            F[k, chosen] += rng.exponential(
                 max(0.1, 0.01 * scales[k]), size=n_load,
             )
         for k in range(p):
-            F[:, k] /= F[:, k].sum()
+            F[k, :] /= F[k, :].sum()
 
-        G = np.zeros((p, n))
+        G = np.zeros((n, p))
         for k in range(p):
-            G[k, :] = rng.exponential(scales[k], size=n)
+            G[:, k] = rng.exponential(scales[k], size=n)
 
-        X_true = F @ G
+        X_true = G @ F
         sigma = noise_frac * np.maximum(X_true, 0.01) + 0.005
         noise = rng.normal(0, sigma)
         X = np.maximum(X_true + noise, 0.0)
@@ -108,12 +108,12 @@ def _(np):
 
     def match_factors(F_est, F_true, linear_sum_assignment):
         """Hungarian matching of estimated to true factors by correlation."""
-        p_est = F_est.shape[1]
-        p_true = F_true.shape[1]
+        p_est = F_est.shape[0]
+        p_true = F_true.shape[0]
         corr = np.zeros((p_est, p_true))
         for i in range(p_est):
             for j in range(p_true):
-                c = np.corrcoef(F_est[:, i], F_true[:, j])[0, 1]
+                c = np.corrcoef(F_est[i, :], F_true[j, :])[0, 1]
                 corr[i, j] = c if np.isfinite(c) else 0.0
         row_ind, col_ind = linear_sum_assignment(-np.abs(corr))
         return row_ind, col_ind, corr
@@ -222,14 +222,14 @@ def _(
         noise_frac=noise_slider.value,
         scales=_scales,
     )
-    p_true = F_true.shape[1]
+    p_true = F_true.shape[0]
 
-    _X_true = F_true @ G_true
+    _X_true = G_true @ F_true
     _snr_power = np.sum(_X_true**2) / np.sum(sigma**2)
     _snr_db = 10 * np.log10(_snr_power)
 
     mo.md(
-        f"**Data**: {X.shape[0]} variables x {X.shape[1]} observations, "
+        f"**Data**: {X.shape[1]} observations x {X.shape[0]} variables, "
         f"**{p_true} true sources**, noise = {noise_slider.value:.0%}, "
         f"SNR = {_snr_db:.1f} dB"
     )

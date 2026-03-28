@@ -166,16 +166,16 @@ def _(
     _p = n_sources_slider.value
 
     # True source profiles on the simplex
-    F_true = _rng.dirichlet(np.ones(_m) * 0.5, size=_p).T  # (m, p)
+    F_true = _rng.dirichlet(np.ones(_m) * 0.5, size=_p)  # (p, m)
 
     # Source contributions (gamma-distributed, varying strengths)
     _scales = np.logspace(1.5, 0, _p)  # decreasing strength
-    G_true = np.zeros((_p, _n))
+    G_true = np.zeros((_n, _p))
     for k in range(_p):
-        G_true[k, :] = _rng.exponential(_scales[k], size=_n)
+        G_true[:, k] = _rng.exponential(_scales[k], size=_n)
 
     # Clean signal + noise
-    X_clean = F_true @ G_true
+    X_clean = G_true @ F_true
     _sigma_true = noise_slider.value * np.maximum(X_clean, 0.01) + 0.001
     X_raw = np.maximum(X_clean + _rng.normal(0, _sigma_true), 1e-8)
 
@@ -189,7 +189,7 @@ def _(
     var_names = [f"V{i+1:02d}" for i in range(_m)]
 
     mo.md(
-        f"**Data**: {_m} variables x {_n} observations, "
+        f"**Data**: {_n} observations x {_m} variables, "
         f"**{_p} true sources**, noise = {noise_slider.value:.0%}, "
         f"closed = {close_data_toggle.value}"
     )

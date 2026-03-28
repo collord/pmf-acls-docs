@@ -94,23 +94,23 @@ def _(np):
         "SO4", "NO3", "NH4", "OC", "EC", "Al", "Si",
         "Ca", "Fe", "Zn", "Pb", "K",
     ]
-    m, n = len(species_names), 100  # 12 species, 100 samples
+    n, m = 100, len(species_names)  # 100 samples, 12 species
 
     # Base concentrations (ug/m3) — realistic range for urban PM2.5
-    X_base = rng.uniform(1, 15, size=(m, n))
+    X_base = rng.uniform(1, 15, size=(n, m))
 
     # --- Inject missing values (5 %) ---
-    n_missing = int(0.05 * m * n)
-    missing_flat_idx = rng.choice(m * n, size=n_missing, replace=False)
+    n_missing = int(0.05 * n * m)
+    missing_flat_idx = rng.choice(n * m, size=n_missing, replace=False)
     X_messy = X_base.copy()
     X_messy.flat[missing_flat_idx] = np.nan
 
     # --- Inject below-detection-limit values (10-20 % per species) ---
     detection_limits = rng.uniform(0.1, 0.6, size=m)
-    for i in range(m):
+    for j in range(m):
         n_bdl = rng.integers(int(0.1 * n), int(0.2 * n))
-        bdl_cols = rng.choice(n, size=n_bdl, replace=False)
-        X_messy[i, bdl_cols] = rng.uniform(-0.1, detection_limits[i] / 2, size=n_bdl)
+        bdl_rows = rng.choice(n, size=n_bdl, replace=False)
+        X_messy[bdl_rows, j] = rng.uniform(-0.1, detection_limits[j] / 2, size=n_bdl)
 
     n_nan = int(np.sum(np.isnan(X_messy)))
 
@@ -121,9 +121,9 @@ def _(np):
 def _(X_messy, m, mo, n, n_nan):
     mo.md(
         f"""
-        **Simulated data:** {m} species x {n} samples
+        **Simulated data:** {n} samples x {m} species
 
-        - Missing values (NaN): **{n_nan}** ({n_nan / (m * n) * 100:.1f} % of cells)
+        - Missing values (NaN): **{n_nan}** ({n_nan / (n * m) * 100:.1f} % of cells)
         - Negative / sub-DL values present in every species
 
         Before we can run PMF, every cell needs a finite, non-negative
